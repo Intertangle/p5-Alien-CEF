@@ -1,0 +1,85 @@
+use alienfile;
+
+use strict;
+use warnings;
+use Config;
+
+share {
+	requires 'File::Copy::Recursive' => 0;
+	requires 'Path::Tiny' => 0;
+
+	my $bit = defined $Config{'archname64'} ? 64 : 32;
+	my %tags = (
+		linux32   => { osname => 'linux'  , bit => 32 },
+		linux64   => { osname => 'linux'  , bit => 64 },
+		macosx64  => { osname => 'darwin' , bit => 64 },
+		windows32 => { osname => 'MSWin32', bit => 32 },
+		windows64 => { osname => 'MSWin32', bit => 64 },
+	);
+
+	my ($match_tag) = grep {
+		$tags{$_}{osname} eq $^O
+		&& $tags{$_}{bit} eq $bit
+	} keys %tags;
+
+	start_url 'http://opensource.spotify.com/cefbuilds/index.html';
+	plugin 'Decode::HTML';
+	plugin Download => (
+		version => qr/^cef_binary_(.*)_${match_tag}_minimal\.tar\.bz2$/,
+	);
+	plugin 'Prefer::GoodVersion' => sub {
+		my($file) = @_;
+		$file->{url} =~ s/\+/%2B/g;
+		1;
+	};
+
+	plugin Extract => 'tar.bz2';
+
+	build [
+		sub {
+			my ($build) = @_;
+
+			my @dirs;
+
+			$build->log("copy to prefix");
+			my $prefix_abs = Path::Tiny::path($build->install_prop->{prefix});
+
+			Path::Tiny::path('LICENSE.txt')->copy( $prefix_abs );
+
+			my $icudtl = Path::Tiny::path('Resources/icudtl.dat');
+			if( -f $icudtl ) {
+				# The resource file `icudtl.dat` needs to be in
+				# the same directory as the `Release/` library.
+				# See <https://www.magpcss.org/ceforum/viewtopic.php?f=6&t=13176>,
+				# <https://bitbucket.org/chromiumembedded/cef/issues/1398>.
+				$icudtl->move('Release/icudtl.dat');
+			}
+
+			for my $subdir (qw(include libcef_dll Release Resources)) {
+				my $target_dir = $prefix_abs->child( $subdir );
+				$target_dir->mkpath;
+				File::Copy::Recursive::dircopy( $subdir, $target_dir );
+			}
+		},
+	];
+
+	gather sub {
+		my($build) = @_;
+		my $prefix = $build->runtime_prop->{prefix};
+
+		# Do not use the include subdirectory for CFLAGS since all
+		# examples of using CEF API do the following for includes:
+		# ```c
+		# #include "include/cef_[...].h"
+		# ```
+		my $cflags = "-I$prefix";
+		my $libs = "-L$prefix/Release -lcef";
+		my $rpath = "$prefix/Release";
+
+		$build->runtime_prop->{cflags}  = $cflags;
+		$build->runtime_prop->{libs}    = $libs;
+
+		push @{ $build->runtime_prop->{rpath} }, $rpath;
+	};
+};
+

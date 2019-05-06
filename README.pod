@@ -1,0 +1,46 @@
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Alien::CEF - Alien package for Chromium Embedded Framework (CEF) embeddable browser
+
+=head1 VERSION
+
+version 0.001
+
+=head1 METHODS
+
+=head2 resource_path
+
+Returns a C<Str> which contains the absolute path
+to the resources directory.
+
+=head2 locales_path
+
+Returns a C<Str> which contains the absolute path
+to the locales directory.
+
+=head1 Inline support
+
+This module supports L<Inline's with functionality|Inline/"Playing 'with' Others">.
+
+=head1 SEE ALSO
+
+L<CEF|https://bitbucket.org/chromiumembedded/cef>
+
+L<Repository information|http://project-renard.github.io/doc/development/repo/p5-Alien-CEF/>
+
+=head1 AUTHOR
+
+Project Renard
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2019 by Project Renard.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
