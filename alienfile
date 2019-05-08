@@ -36,6 +36,9 @@ share {
 	plugin 'Extract::CommandLine' => 'tar.bz2';
 
 	build [
+		(
+			q|install_name_tool -id '@rpath/Chromium Embedded Framework.framework/Chromium Embedded Framework' 'Release/Chromium Embedded Framework.framework/Chromium Embedded Framework'|
+		) x!!( $^O eq 'darwin' ),
 		sub {
 			my ($build) = @_;
 
@@ -73,7 +76,8 @@ share {
 		# #include "include/cef_[...].h"
 		# ```
 		my $cflags = "-I$prefix";
-		my $libs = "-L$prefix/Release -lcef";
+		my @ldlibs = $^O ne 'darwin' ? ("-lcef") : ();
+		my $libs = join " ", "-L$prefix/Release", @ldlibs;
 		my $rpath = "Release";
 
 		$build->runtime_prop->{cflags}  = $cflags;
