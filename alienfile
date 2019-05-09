@@ -33,7 +33,7 @@ share {
 		1;
 	};
 
-	plugin Extract => 'tar.bz2';
+	plugin 'Extract::CommandLine' => 'tar.bz2';
 
 	build [
 		sub {
