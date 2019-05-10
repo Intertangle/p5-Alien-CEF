@@ -50,12 +50,6 @@ init(
 
 	// Main args.
 	cef_main_args_t main_args = {};
-	main_args.argc = 1;
-
-	char* argv[1];
-	argv[0] = "perl";
-
-	main_args.argv = argv;
 
 	cef_app_t* app = NULL;
 
@@ -63,7 +57,7 @@ init(
 	// a separate executable for subprocesses by setting
 	// cef_settings_t.browser_subprocess_path. In such
 	// case cef_execute_process should not be called here.
-	printf("cef_execute_process, argc=%d\n", main_args.argc);
+	printf("cef_execute_process\n");
 	int code = cef_execute_process(&main_args, app, NULL);
 	if (code >= 0) {
 		return code;
