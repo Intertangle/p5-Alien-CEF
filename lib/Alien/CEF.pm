@@ -31,6 +31,30 @@ sub locales_path {
 		'Resources', 'locales' );
 }
 
+=method framework_path
+
+Returns a C<Str> with path to C<Chromium Embedded Framework> framework if on
+macOS. Returns an empty C<Str> otherwise.
+
+=cut
+
+sub framework_path {
+	my ($self) = @_;
+	my $rpath = ($self->rpath)[0];
+	$^O eq 'darwin' ? "$rpath/Chromium Embedded Framework.framework" : "";
+}
+
+sub extra_linker_flags {
+	my ($self) = @_;
+	my @extra_linker_flags;
+	if( $^O eq 'darwin' ) {
+		# On macOS, link using framework, not using C<< -lcef >> as on
+		# Linux or Windows.
+		my $rpath = ($self->rpath)[0];
+		push @extra_linker_flags, qq|-F$rpath -framework 'Chromium Embedded Framework'|;
+	}
+	@extra_linker_flags;
+}
 
 with 'Alien::Role::Dino';
 
