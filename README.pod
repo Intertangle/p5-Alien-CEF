@@ -22,6 +22,11 @@ to the resources directory.
 Returns a C<Str> which contains the absolute path
 to the locales directory.
 
+=head2 framework_path
+
+Returns a C<Str> with path to C<Chromium Embedded Framework> framework if on
+macOS. Returns an empty C<Str> otherwise.
+
 =head1 Inline support
 
 This module supports L<Inline's with functionality|Inline/"Playing 'with' Others">.

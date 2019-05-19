@@ -7,16 +7,11 @@ use Alien::CEF;
 subtest 'CEF init' => sub {
 	alien_ok 'Alien::CEF';
 
-	my $rpath = (Alien::CEF->rpath)[0];
 	my $xs = do { local $/; <DATA> };
 	xs_ok {
 		xs => $xs,
 		cbuilder_link => {
-			extra_linker_flags => (
-				$^O eq 'darwin'
-				? qq|-F$rpath -framework 'Chromium Embedded Framework'|
-				: '',
-			),
+			extra_linker_flags => Alien::CEF->extra_linker_flags,
 		},
 		verbose => 0,
 	}, with_subtest {
@@ -24,7 +19,7 @@ subtest 'CEF init' => sub {
 		is $module->init(
 			Alien::CEF->resource_path,
 			Alien::CEF->locales_path,
-			( $^O eq 'darwin' ? "$rpath/Chromium Embedded Framework.framework" : "" ),
+			Alien::CEF->framework_path,
 		), 0,
 			"Initialised CEF";
 	};
