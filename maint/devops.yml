@@ -1,6 +1,7 @@
 native:
   debian:
     packages:
+      - cmake
       - libasound2
       - libatk1.0-0
       - libatk-bridge2.0-0
@@ -27,6 +28,8 @@ native:
       - libxss1
       - libxtst6
   macos-homebrew:
-    packages: ~
+    packages:
+      - cmake
   msys2-mingw64:
-    packages: ~
+    packages:
+      - mingw-w64-x86_64-cmake

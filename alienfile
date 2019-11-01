@@ -3,6 +3,7 @@ use alienfile;
 use strict;
 use warnings;
 use Config;
+requires 'Alien::gmake';
 
 share {
 	requires 'File::Copy::Recursive' => 0;
@@ -39,6 +40,10 @@ share {
 		(
 			q|install_name_tool -id '@rpath/Chromium Embedded Framework.framework/Chromium Embedded Framework' 'Release/Chromium Embedded Framework.framework/Chromium Embedded Framework'|
 		) x!!( $^O eq 'darwin' ),
+		[ 'cmake', qw(-G), 'Unix Makefiles',
+			'-DCMAKE_INSTALL_PREFIX:PATH=%{.install.prefix}',
+			'.' ],
+		[ '%{gmake}' ],
 		sub {
 			my ($build) = @_;
 
@@ -58,7 +63,11 @@ share {
 				$icudtl->move('Release/icudtl.dat');
 			}
 
-			for my $subdir (qw(include libcef_dll Release Resources)) {
+			my $release_dir = $prefix_abs->child( 'Release' );
+			$release_dir->mkpath;
+			File::Copy::Recursive::rcopy_glob("libcef_dll_wrapper/libcef_dll_wrapper*", $release_dir );
+
+			for my $subdir (qw(include Release Resources)) {
 				my $target_dir = $prefix_abs->child( $subdir );
 				$target_dir->mkpath;
 				File::Copy::Recursive::dircopy( $subdir, $target_dir );
