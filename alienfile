@@ -3,10 +3,14 @@ use alienfile;
 use strict;
 use warnings;
 use Config;
+requires 'Alien::gmake';
 
 share {
 	requires 'File::Copy::Recursive' => 0;
 	requires 'Path::Tiny' => 0;
+	requires 'HTTP::Tiny' => 0;
+	requires 'Net::SSLeay' => 0;
+	requires 'IO::Socket::SSL' => 0;
 
 	my $bit = defined $Config{'archname64'} ? 64 : 32;
 	my %tags = (
@@ -35,10 +39,39 @@ share {
 
 	plugin 'Extract::CommandLine' => 'tar.bz2';
 
+	patch sub {
+		my ($build) = @_;
+
+		my $cef_variables = Path::Tiny->new('cmake/cef_variables.cmake');
+		$cef_variables->edit_lines(sub {
+			s|\Qif(OS_WINDOWS)\E|if(OS_WINDOWS AND "\${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")|;
+		});
+		$cef_variables->append_utf8(
+			Path::Tiny->new($build->install_prop->{patch}, 'cef_variables_mingw.cmake')->slurp_utf8
+		);
+
+		if( $^O eq 'MSWin32' ) {
+			my $path_to_cef_atomicops_x86_gcc = 'include/base/internal/cef_atomicops_x86_gcc.h';
+			my $response = HTTP::Tiny->new->get('https://bitbucket.org/chromiumembedded/cef/raw/master/'. $path_to_cef_atomicops_x86_gcc);
+			die "Could not download cef_atomicops_x86_gcc.h!\n" unless $response->{success};
+			my $cef_atomicops_x86_gcc = Path::Tiny->new($path_to_cef_atomicops_x86_gcc);
+			$cef_atomicops_x86_gcc->spew_utf8($response->{content});
+		}
+
+		my $string = Path::Tiny->new("include/internal/cef_string_wrappers.h");
+		$string->edit( sub {
+			s/\Q#include <string>\E/$&\n#include <cstring>/s;
+		});
+	};
+
 	build [
 		(
 			q|install_name_tool -id '@rpath/Chromium Embedded Framework.framework/Chromium Embedded Framework' 'Release/Chromium Embedded Framework.framework/Chromium Embedded Framework'|
 		) x!!( $^O eq 'darwin' ),
+		[ 'cmake', qw(-G), 'Unix Makefiles',
+			'-DCMAKE_INSTALL_PREFIX:PATH=%{.install.prefix}',
+			'.' ],
+		[ '%{gmake}' ],
 		sub {
 			my ($build) = @_;
 
@@ -58,7 +91,11 @@ share {
 				$icudtl->move('Release/icudtl.dat');
 			}
 
-			for my $subdir (qw(include libcef_dll Release Resources)) {
+			my $release_dir = $prefix_abs->child( 'Release' );
+			$release_dir->mkpath;
+			File::Copy::Recursive::rcopy_glob("libcef_dll_wrapper/libcef_dll_wrapper*", $release_dir );
+
+			for my $subdir (qw(include Release Resources)) {
 				my $target_dir = $prefix_abs->child( $subdir );
 				$target_dir->mkpath;
 				File::Copy::Recursive::dircopy( $subdir, $target_dir );
