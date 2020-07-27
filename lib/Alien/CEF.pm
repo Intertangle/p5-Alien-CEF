@@ -15,6 +15,10 @@ to the resources directory.
 =cut
 sub resource_path {
 	my ($self) = @_;
+	if( $^O eq 'darwin' ) {
+		return File::Spec->catfile( File::Spec->rel2abs($self->framework_path) ,
+			'Resources' );
+	}
 	File::Spec->catfile( File::Spec->rel2abs($self->dist_dir) ,
 		'Resources' );
 }
