@@ -73,4 +73,4 @@ This module supports L<Inline's with functionality|Inline/"Playing 'with' Others
 
 L<CEF|https://bitbucket.org/chromiumembedded/cef>
 
-L<Repository information|http://project-renard.github.io/doc/development/repo/p5-Alien-CEF/>
+
