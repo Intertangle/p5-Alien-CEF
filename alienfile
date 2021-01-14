@@ -11,6 +11,7 @@ share {
 	requires 'HTTP::Tiny' => 0;
 	requires 'Net::SSLeay' => 0;
 	requires 'IO::Socket::SSL' => 0;
+	requires 'Mojo::JSON';
 
 	my $bit = defined $Config{'archname64'} ? 64 : 32;
 	my %tags = (
@@ -26,16 +27,48 @@ share {
 		&& $tags{$_}{bit} eq $bit
 	} keys %tags;
 
-	start_url 'http://opensource.spotify.com/cefbuilds/index.html';
-	plugin 'Decode::HTML';
+	my $cdn_url = 'https://cef-builds.spotifycdn.com';
+	start_url "$cdn_url/index.json";
+	meta->around_hook(
+		fetch => sub {
+			my $orig = shift;
+			my $build = shift;
+			my $data = $orig->($build, @_);
+
+			if( $data->{filename} =~ /\Qindex.json\E$/ ) {
+				my $json_data = Mojo::JSON::decode_json(
+					exists $data->{path}
+					?  Path::Tiny::path($data->{path})->slurp_raw
+					: $data->{content}
+				);
+				my $match_data = $json_data->{$match_tag};
+				my @list = map {
+						my $files = $_->{files};
+						my ($min) = grep { $_->{type} eq 'minimal' } @$files;
+						# client | standard | minimal
+						my $name = $min->{name};
+						{
+							version => $_->{cef_version} . "+" . $_->{chromium_version},
+							filename => $name,
+							url => "$cdn_url/$name",
+						}
+					}
+					grep { $_->{channel} eq 'stable' }
+					# stable | beta
+					@{ $json_data->{$match_tag}{versions} };
+
+				return {
+					type => 'list',
+					list => \@list,
+				};
+			}
+
+			return $data;
+                },
+        );
 	plugin Download => (
 		version => qr/^cef_binary_(.*)_${match_tag}_minimal\.tar\.bz2$/,
 	);
-	plugin 'Prefer::GoodVersion' => sub {
-		my($file) = @_;
-		$file->{url} =~ s/\+/%2B/g;
-		1;
-	};
 
 	plugin 'Extract::CommandLine' => 'tar.bz2';
 
