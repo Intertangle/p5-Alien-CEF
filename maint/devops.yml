@@ -6,9 +6,6 @@ native:
       - libatk-bridge2.0-0
       - libatk1.0-0
       - libatspi2.0-0
-      - libavcodec58
-      - libavformat58
-      - libavutil56
       - libc6
       - libcairo2
       - libcups2
@@ -25,8 +22,6 @@ native:
       - libglib2.0-0
       - libgtk-3-0
       - libharfbuzz0b
-      - libicu63
-      - libjpeg62-turbo
       - libjsoncpp1
       - liblcms2-2
       - libminizip1
@@ -38,7 +33,6 @@ native:
       - libpangocairo-1.0-0
       - libpng16-16
       - libpulse0
-      - libre2-5
       - libsnappy1v5
       - libstdc++6
       - libvpx5
